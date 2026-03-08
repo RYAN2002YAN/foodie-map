@@ -4,27 +4,39 @@ from streamlit_folium import st_folium
 import json
 import os
 import base64
-import uuid  # 引入 uuid，为每一条记录生成独一无二的身份证号
+import uuid
+import requests  # 新增：网络请求库
 
-DB_FILE = "social_db.json"
+# === 核心数据层：接入 JSONBin 云端数据库 ===
+# 我们将从 Streamlit 的“安全抽屉”里读取秘钥，防止泄露
+BIN_ID = st.secrets["BIN_ID"]
+API_KEY = st.secrets["API_KEY"]
+JSONBIN_URL = f"https://api.jsonbin.io/v3/b/{BIN_ID}"
 
-# === 核心数据层 ===
+HEADERS = {
+    "X-Master-Key": API_KEY,
+    "Content-Type": "application/json"
+}
+
 def load_db():
-    if os.path.exists(DB_FILE):
-        with open(DB_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+    """去云端保险箱拿数据"""
+    try:
+        response = requests.get(JSONBIN_URL, headers=HEADERS)
+        if response.status_code == 200:
+            # JSONBin 返回的数据包裹在一个叫 "record" 的壳子里
+            return response.json().get("record", {"users": {}, "places": []})
+    except Exception as e:
+        st.error(f"云端数据库连接失败: {e}")
+    # 如果没拿到，返回空的保底数据
     return {"users": {}, "places": []}
 
 def save_db(db):
-    with open(DB_FILE, "w", encoding="utf-8") as f:
-        json.dump(db, f, ensure_ascii=False, indent=4)
-
-def get_image_base64(uploaded_file):
-    if uploaded_file is not None:
-        bytes_data = uploaded_file.getvalue()
-        b64 = base64.b64encode(bytes_data).decode()
-        return f"data:{uploaded_file.type};base64,{b64}"
-    return None
+    """把最新数据存回云端保险箱"""
+    try:
+        # 使用 PUT 请求覆盖更新整个 JSONBin
+        requests.put(JSONBIN_URL, json=db, headers=HEADERS)
+    except Exception as e:
+        st.error(f"数据保存到云端失败: {e}")
 
 # === 初始化全局状态 ===
 st.set_page_config(page_title="Vibe 探店朋友圈", page_icon="🌍", layout="centered")
