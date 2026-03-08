@@ -33,13 +33,13 @@
 ### Step 2: 准备 GitHub 仓库
 1. Fork 本仓库，或者新建一个公开仓库。
 2. 确保你的仓库里有这 2 个文件：
-   app.py
-   requirements.txt(内容必须包含：streamlit, folium, streamlit-folium, requests)
+   * app.py
+   * requirements.txt(内容必须包含：streamlit, folium, streamlit-folium, requests)
 
 ### Step 3: 准备上传Streamlit Cloud
 1. 访问 Streamlit Community Cloud 并用 GitHub 登录。
 2. 点击 New app，选择你的刚刚准备好的代码仓库，Main file path 填写 app.py。
 3. 关键一步：在点击 Deploy 之前，点击页面上的 Advanced settings (或者部署后进入 Settings -> Secrets)。
 4. 在 Secrets 文本框中填入你第一步拿到的两把钥匙：
-   BIN_ID = "你的_Bin_ID"
-   API_KEY = "你的_Master_Key"
+  * BIN_ID = "你的_Bin_ID"
+  * API_KEY = "你的_Master_Key"
