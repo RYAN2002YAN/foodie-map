@@ -85,6 +85,13 @@ if st.session_state.current_user is None:
 
 # ================= 2. 侧边栏：社交与通讯录 =================
 me = st.session_state.current_user
+
+# 兼容旧数据：确保当前用户有 friends 和 pending_requests 列表
+if "pending_requests" not in st.session_state.db["users"][me]:
+    st.session_state.db["users"][me]["pending_requests"] = []
+if "friends" not in st.session_state.db["users"][me]:
+    st.session_state.db["users"][me]["friends"] = []
+
 my_info = st.session_state.db["users"][me]
 
 with st.sidebar:
@@ -95,34 +102,68 @@ with st.sidebar:
         
     st.divider()
     
-    st.write("#### 🤝 添加好友")
+    # --- 处理收到的好友申请 ---
+    pending = my_info.get("pending_requests", [])
+    if pending:
+        st.write("#### 🔔 新的好友申请")
+        for applicant in pending:
+            st.info(f"👤 **{applicant}** 想加你为好友")
+            col_y, col_n = st.columns(2)
+            with col_y:
+                if st.button("同意", key=f"y_{applicant}"):
+                    st.session_state.db = load_db() # 强制拿最新数据
+                    # 双向添加好友
+                    st.session_state.db["users"][me]["friends"].append(applicant)
+                    # 确保对方也有 friends 列表
+                    if "friends" not in st.session_state.db["users"][applicant]:
+                        st.session_state.db["users"][applicant]["friends"] = []
+                    st.session_state.db["users"][applicant]["friends"].append(me)
+                    # 从申请列表中移除
+                    st.session_state.db["users"][me]["pending_requests"].remove(applicant)
+                    save_db(st.session_state.db)
+                    st.success("已成为好友！")
+                    st.rerun()
+            with col_n:
+                if st.button("拒绝", key=f"n_{applicant}"):
+                    st.session_state.db = load_db()
+                    st.session_state.db["users"][me]["pending_requests"].remove(applicant)
+                    save_db(st.session_state.db)
+                    st.rerun()
+        st.divider()
+
+    # --- 发送好友申请 ---
+    st.write("#### 🤝 添加新朋友")
     st.caption("需提供对方的 代号#4位ID")
     new_friend = st.text_input("输入完整标识 (如 老王#1122)：").strip()
     
-    if st.button("精准添加"):
-        # 👉 新增这一行：在点按钮的瞬间，强制去云端拉取最新数据，防止时间差！
-        st.session_state.db = load_db() 
-        my_info = st.session_state.db["users"][me] # 同步更新你自己的信息
+    if st.button("发送好友申请"):
+        st.session_state.db = load_db() # 强制刷新防时间差
+        my_info = st.session_state.db["users"][me] 
         
         if not new_friend or "#" not in new_friend:
             st.warning("格式不对哦，记得加上英文的 # 和 4位数字ID。")
         elif new_friend == me:
             st.warning("不能添加自己哦！")
         elif new_friend not in st.session_state.db["users"]:
-            st.error("查无此人！请核对对方是否已登录，或者 # 是否打成了中文。")
-        elif new_friend in my_info["friends"]:
+            st.error("查无此人！请核对对方的代号和ID。")
+        elif new_friend in my_info.get("friends", []):
             st.info("你们已经是好友啦！")
         else:
-            # 双向添加好友
-            my_info["friends"].append(new_friend)
-            st.session_state.db["users"][new_friend]["friends"].append(me)
-            save_db(st.session_state.db)
-            st.success(f"验证通过！已与 {new_friend} 建立连接！")
-            st.rerun()
+            # 将自己加入对方的 pending_requests (待处理申请) 列表
+            target_user = st.session_state.db["users"][new_friend]
+            if "pending_requests" not in target_user:
+                target_user["pending_requests"] = []
             
+            if me in target_user["pending_requests"]:
+                st.info("已经发送过申请啦，请耐心等待对方同意~")
+            else:
+                target_user["pending_requests"].append(me)
+                save_db(st.session_state.db)
+                st.success(f"申请已发送给 {new_friend}！")
+
     st.divider()
     st.write("#### 📋 我的美食搭子")
-    if not my_info["friends"]:
+    if not my_info.get("friends"):
         st.write("还没有好友，快把你的专属标识发给朋友吧！")
     else:
         for f in my_info["friends"]:
