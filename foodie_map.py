@@ -38,6 +38,14 @@ def save_db(db):
     except Exception as e:
         st.error(f"数据保存到云端失败: {e}")
 
+# 👇 处理图片的函数👇
+def get_image_base64(uploaded_file):
+    if uploaded_file is not None:
+        bytes_data = uploaded_file.getvalue()
+        b64 = base64.b64encode(bytes_data).decode()
+        return f"data:{uploaded_file.type};base64,{b64}"
+    return None
+
 # === 初始化全局状态 ===
 st.set_page_config(page_title="Vibe 探店朋友圈", page_icon="🌍", layout="centered")
 
