@@ -43,3 +43,4 @@
 4. 在 Secrets 文本框中填入你第一步拿到的两把钥匙：
    * BIN_ID = "你的_Bin_ID"
    * API_KEY = "你的_Master_Key"
+5. 点击 Deploy! 等待气球飘过，你的 App 就正式上线啦！把生成的网址发给朋友，开始打卡吧！
