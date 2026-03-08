@@ -220,7 +220,44 @@ else:
     st.info("地图空空如也，快去下方发布第一条记录吧！")
 
 st.divider()
+# ================= 3.5 互动区：好友点评与讨论 =================
+st.divider()
+st.subheader("💬 探店评论区")
 
+if visible_places:
+    # 制作一个下拉菜单，让用户选择要评论的餐厅
+    place_options = {f"【{p['name']}】 (由 {p['author']} 发布)": p for p in visible_places}
+    selected_place_name = st.selectbox("选择你想查看或点评的餐厅：", list(place_options.keys()))
+    selected_place = place_options[selected_place_name]
+    
+    # 展示历史评论
+    comments = selected_place.get("comments", [])
+    if comments:
+        for c in comments:
+            # 用气泡的形式展示评论
+            st.markdown(f"<div style='background-color:#F0F2F6; padding:10px; border-radius:10px; margin-bottom:10px;'>"
+                        f"<span style='color:#FF4B4B; font-weight:bold;'>👤 {c['author']}</span> : {c['content']}</div>", 
+                        unsafe_allow_html=True)
+    else:
+        st.caption("这家店还没有人评论，快来抢沙发！")
+        
+    # 发表新评论
+    with st.form(key=f"comment_form_{selected_place['id']}", clear_on_submit=True):
+        new_comment = st.text_input("写下你的点评或回复：", placeholder="比如：这家店的排骨确实绝了！")
+        submit_comment = st.form_submit_button("发送评论")
+        
+        if submit_comment and new_comment.strip():
+            st.session_state.db = load_db() # 强制拿最新数据
+            # 在数据库中找到这家店，把评论塞进去
+            for p in st.session_state.db["places"]:
+                if p["id"] == selected_place["id"]:
+                    if "comments" not in p:
+                        p["comments"] = []
+                    p["comments"].append({"author": me, "content": new_comment.strip()})
+                    break
+            save_db(st.session_state.db)
+            st.success("评论发送成功！")
+            st.rerun()
 # ================= 4. 发布新记录 (五维测评) =================
 st.subheader("📝 发布新探店记录")
 
