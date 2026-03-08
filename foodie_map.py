@@ -100,21 +100,26 @@ with st.sidebar:
     new_friend = st.text_input("输入完整标识 (如 老王#1122)：").strip()
     
     if st.button("精准添加"):
+        # 👉 新增这一行：在点按钮的瞬间，强制去云端拉取最新数据，防止时间差！
+        st.session_state.db = load_db() 
+        my_info = st.session_state.db["users"][me] # 同步更新你自己的信息
+        
         if not new_friend or "#" not in new_friend:
-            st.warning("格式不对哦，记得加上 # 和 4位数字ID。")
+            st.warning("格式不对哦，记得加上英文的 # 和 4位数字ID。")
         elif new_friend == me:
             st.warning("不能添加自己哦！")
         elif new_friend not in st.session_state.db["users"]:
-            st.error("查无此人！请核对对方的代号和ID是否完全一致。")
+            st.error("查无此人！请核对对方是否已登录，或者 # 是否打成了中文。")
         elif new_friend in my_info["friends"]:
             st.info("你们已经是好友啦！")
         else:
+            # 双向添加好友
             my_info["friends"].append(new_friend)
             st.session_state.db["users"][new_friend]["friends"].append(me)
             save_db(st.session_state.db)
             st.success(f"验证通过！已与 {new_friend} 建立连接！")
             st.rerun()
-
+            
     st.divider()
     st.write("#### 📋 我的美食搭子")
     if not my_info["friends"]:
