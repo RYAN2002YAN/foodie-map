@@ -41,5 +41,5 @@
 2. 点击 New app，选择你的刚刚准备好的代码仓库，Main file path 填写 app.py。
 3. 关键一步：在点击 Deploy 之前，点击页面上的 Advanced settings (或者部署后进入 Settings -> Secrets)。
 4. 在 Secrets 文本框中填入你第一步拿到的两把钥匙：
-  * BIN_ID = "你的_Bin_ID"
-  * API_KEY = "你的_Master_Key"
+   * BIN_ID = "你的_Bin_ID"
+   * API_KEY = "你的_Master_Key"
